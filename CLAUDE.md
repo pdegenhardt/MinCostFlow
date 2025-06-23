@@ -88,3 +88,16 @@ When implementing the C# port:
 3. Maintain LEMON's algorithmic optimizations
 4. Use unsafe code and SIMD where beneficial for performance
 5. Implement comprehensive tests comparing with LEMON output
+
+## Progress Tracking
+
+Weekly progress is documented in `/docs/` following a standardized format:
+- Template: `/docs/weekly-progress-template.md`
+- Index: `/docs/progress-index.md`
+- Reports: `/docs/week[N]-progress.md`
+
+When completing weekly work:
+1. Copy the template to create `week[N]-progress.md`
+2. Fill in all sections with actual results
+3. Update the progress index
+4. Commit with message: "Week [N] progress report: [brief summary]"
