@@ -193,11 +193,15 @@ public sealed class NetworkSimplex : IMinCostFlowSolver
         
         // Main simplex loop
         int iterations = 0;
+        long maxIterations = Math.Max(1000000L, (long)_nodeCount * _arcCount); // Allow more iterations for larger problems
+        
         while (_enteringArcFinder.FindEnteringArc())
         {
             iterations++;
-            if (iterations > 10000) // Safety check
+            if (iterations > maxIterations) // Safety check
             {
+                // Log diagnostic information
+                Console.WriteLine($"WARNING: Network Simplex hit iteration limit of {maxIterations:N0} (nodes: {_nodeCount}, arcs: {_arcCount})");
                 _status = SolverStatus.Infeasible;
                 return _status;
             }
@@ -221,6 +225,32 @@ public sealed class NetworkSimplex : IMinCostFlowSolver
         if (CheckFeasibility())
         {
             _status = SolverStatus.Optimal;
+            
+            // Transform the solution back to the original form if we had lower bounds
+            bool hasLowerBounds = false;
+            for (int i = 0; i < _arcCount; i++)
+            {
+                if (_origLower[i] != 0)
+                {
+                    hasLowerBounds = true;
+                    break;
+                }
+            }
+            
+            if (hasLowerBounds)
+            {
+                // Add back the lower bounds to get actual flow values
+                for (int i = 0; i < _arcCount; i++)
+                {
+                    if (_origLower[i] != 0)
+                    {
+                        _flow[i] += _origLower[i];
+                        // Restore original supplies
+                        _supply[_arcLists.Source[i]] += _origLower[i];
+                        _supply[_arcLists.Target[i]] -= _origLower[i];
+                    }
+                }
+            }
         }
         else
         {
@@ -240,8 +270,7 @@ public sealed class NetworkSimplex : IMinCostFlowSolver
         if (!_graph.IsValidArc(arc))
             throw new ArgumentException("Invalid arc", nameof(arc));
         
-        // Add back the lower bound that was transformed away
-        return _flow[arc.Id] + _origLower[arc.Id];
+        return _flow[arc.Id];
     }
     
     /// <summary>
@@ -268,8 +297,7 @@ public sealed class NetworkSimplex : IMinCostFlowSolver
         long totalCost = 0;
         for (int i = 0; i < _arcCount; i++)
         {
-            // Use actual flow (including lower bounds) for cost calculation
-            totalCost += (_flow[i] + _origLower[i]) * _cost[i];
+            totalCost += _flow[i] * _cost[i];
         }
         return totalCost;
     }
@@ -278,6 +306,55 @@ public sealed class NetworkSimplex : IMinCostFlowSolver
     /// Gets the current solver status.
     /// </summary>
     public SolverStatus Status => _status;
+    
+    /// <summary>
+    /// Gets the supply type (GEQ or LEQ).
+    /// </summary>
+    public SupplyType SupplyType => _supplyType;
+    
+    /// <summary>
+    /// Gets the supply value for a node.
+    /// </summary>
+    public long GetNodeSupply(Node node)
+    {
+        if (!_graph.IsValidNode(node))
+            throw new ArgumentException("Invalid node", nameof(node));
+        
+        return _supply[node.Id];
+    }
+    
+    /// <summary>
+    /// Gets the cost of an arc.
+    /// </summary>
+    public long GetArcCost(Arc arc)
+    {
+        if (!_graph.IsValidArc(arc))
+            throw new ArgumentException("Invalid arc", nameof(arc));
+        
+        return _cost[arc.Id];
+    }
+    
+    /// <summary>
+    /// Gets the lower bound of an arc.
+    /// </summary>
+    public long GetArcLowerBound(Arc arc)
+    {
+        if (!_graph.IsValidArc(arc))
+            throw new ArgumentException("Invalid arc", nameof(arc));
+        
+        return _origLower[arc.Id];
+    }
+    
+    /// <summary>
+    /// Gets the upper bound of an arc.
+    /// </summary>
+    public long GetArcUpperBound(Arc arc)
+    {
+        if (!_graph.IsValidArc(arc))
+            throw new ArgumentException("Invalid arc", nameof(arc));
+        
+        return _upper[arc.Id];
+    }
     
     /// <summary>
     /// Enables optimized pivot rules using unsafe code.

@@ -1,0 +1,13 @@
+c Diamond graph problem
+c Diamond shape: 1 -> (2,3) -> 4
+c Two paths from 1 to 4:
+c   Path 1: 1->2->4 (cost 5+3 = 8)
+c   Path 2: 1->3->4 (cost 2+7 = 9)
+c Optimal: Use path 1->2->4 (cost 8*10 = 80)
+p min 4 4
+n 1 10
+n 4 -10
+a 1 2 0 10 5
+a 1 3 0 10 2
+a 2 4 0 10 3
+a 3 4 0 10 7

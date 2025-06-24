@@ -1,0 +1,25 @@
+c Transportation problem - 2 sources, 3 sinks
+c Sources: S1 (supply 20), S2 (supply 30)
+c Sinks: D1 (demand 15), D2 (demand 20), D3 (demand 15)
+c Cost matrix:
+c      D1  D2  D3
+c S1:  2   4   3
+c S2:  3   1   2
+c Optimal solution (by inspection):
+c   S1 -> D1: 15 units (cost 2*15 = 30)
+c   S1 -> D3: 5 units  (cost 3*5 = 15)
+c   S2 -> D2: 20 units (cost 1*20 = 20)
+c   S2 -> D3: 10 units (cost 2*10 = 20)
+c Total cost: 30 + 15 + 20 + 20 = 85
+p min 5 6
+n 1 20
+n 2 30
+n 3 -15
+n 4 -20
+n 5 -15
+a 1 3 0 20 2
+a 1 4 0 20 4
+a 1 5 0 20 3
+a 2 3 0 30 3
+a 2 4 0 30 1
+a 2 5 0 30 2

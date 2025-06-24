@@ -1,9 +1,13 @@
 using BenchmarkDotNet.Running;
+using BenchmarkDotNet.Attributes;
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using MinCostFlow.Core.Algorithms;
 using MinCostFlow.Core.Types;
+using MinCostFlow.Core.Validation;
+using MinCostFlow.Problems;
 
 namespace MinCostFlow.Benchmarks;
 
@@ -11,97 +15,83 @@ public class Program
 {
     public static void Main(string[] args)
     {
-        if (args.Contains("--quick"))
+        if (args.Contains("--help") || args.Contains("-h"))
         {
-            RunQuickPerformanceCheck();
-        }
-        else
-        {
-            BenchmarkRunner.Run<NetworkSimplexBenchmarks>();
-        }
-    }
-
-    private static void RunQuickPerformanceCheck()
-    {
-        Console.WriteLine("Running quick performance validation...\n");
-        
-        var benchmarks = new NetworkSimplexBenchmarks();
-        benchmarks.Setup();
-        
-        // Find the 10,000 node problem - try simple first as it's most reliable
-        var problem = benchmarks.GetProblems().FirstOrDefault(p => p.Name == "Simple_10000")
-                      ?? benchmarks.GetProblems().FirstOrDefault(p => p.Name == "Circulation_10000") 
-                      ?? benchmarks.GetProblems().FirstOrDefault(p => p.Name == "Transport_10000_sparse")
-                      ?? benchmarks.GetProblems().FirstOrDefault(p => p.Name == "Transport_10000");
-        if (problem == null)
-        {
-            Console.WriteLine("ERROR: Could not find 10,000 node problem");
+            PrintHelp();
             return;
         }
         
-        Console.WriteLine($"Problem: {problem.Name}");
-        Console.WriteLine($"Nodes: {problem.NodeCount:N0}");
-        Console.WriteLine($"Arcs: {problem.ArcCount:N0}");
-        
-        // Check supply balance
-        long totalSupply = 0;
-        for (int i = 0; i < problem.NodeCount; i++)
+        // Check which mode to run
+        if (args.Contains("--generate") || args.Contains("-g"))
         {
-            totalSupply += problem.Supplies[i];
+            ProblemGeneratorCommand.Execute(args);
         }
-        Console.WriteLine($"Total Supply: {totalSupply} (should be 0 for balanced problem)");
-        
-        // Warm up
-        var solver = new NetworkSimplex(problem.Graph);
-        SetupSolver(solver, problem);
-        solver.Solve();
-        
-        // Measure memory before
-        var memoryBefore = GC.GetTotalMemory(true);
-        
-        // Time the solve
-        solver = new NetworkSimplex(problem.Graph);
-        SetupSolver(solver, problem);
-        
-        var sw = Stopwatch.StartNew();
-        var status = solver.Solve();
-        sw.Stop();
-        
-        // Measure memory after
-        var memoryAfter = GC.GetTotalMemory(false);
-        var memoryUsed = (memoryAfter - memoryBefore) / (1024 * 1024);
-        
-        Console.WriteLine($"\nResult: {status}");
-        Console.WriteLine($"Time: {sw.ElapsedMilliseconds}ms");
-        Console.WriteLine($"Memory used: ~{memoryUsed}MB");
-        
-        // Check targets
-        Console.WriteLine("\nPerformance Targets:");
-        Console.WriteLine($"✓ Time < 1000ms: {(sw.ElapsedMilliseconds < 1000 ? "PASS" : "FAIL")} ({sw.ElapsedMilliseconds}ms)");
-        Console.WriteLine($"✓ Memory < 200MB: {(memoryUsed < 200 ? "PASS" : "FAIL")} (~{memoryUsed}MB)");
-        
-        // Get solution stats
-        if (status == SolverStatus.Optimal)
+        else if (args.Contains("--stats") || args.Contains("-s"))
         {
-            var totalCost = solver.GetTotalCost();
-            Console.WriteLine($"\nTotal Cost: {totalCost:N0}");
+            RunStatisticsMode();
+        }
+        else if (args.Contains("--benchmark") || args.Contains("-b"))
+        {
+            RunBenchmarkMode();
+        }
+        else if (args.Contains("--compare") || args.Contains("-c"))
+        {
+            RunComparisonMode();
+        }
+        else
+        {
+            // Default to statistics mode
+            RunStatisticsMode();
         }
     }
     
-    private static void SetupSolver(NetworkSimplex solver, NetworkSimplexBenchmarks.BenchmarkProblem problem)
+    private static void PrintHelp()
     {
-        // Set supplies
-        for (int i = 0; i < problem.NodeCount; i++)
-        {
-            solver.SetNodeSupply(new Node(i), problem.Supplies[i]);
-        }
+        Console.WriteLine("MinCostFlow Benchmarks");
+        Console.WriteLine();
+        Console.WriteLine("Usage: dotnet run -- [options]");
+        Console.WriteLine();
+        Console.WriteLine("Options:");
+        Console.WriteLine("  --stats, -s       Run single-pass statistics (default)");
+        Console.WriteLine("  --benchmark, -b   Run full BenchmarkDotNet benchmarks");
+        Console.WriteLine("  --compare, -c     Run NetworkSimplex vs OR-Tools comparison");
+        Console.WriteLine("  --generate, -g    Generate new test problems");
+        Console.WriteLine("  --help, -h        Show this help message");
+        Console.WriteLine();
+        Console.WriteLine("Examples:");
+        Console.WriteLine("  dotnet run                            # Run statistics mode");
+        Console.WriteLine("  dotnet run -- --stats                 # Run statistics mode");
+        Console.WriteLine("  dotnet run -- --benchmark             # Run benchmarks");
+        Console.WriteLine("  dotnet run -- --compare               # Run solver comparison");
+        Console.WriteLine("  dotnet run -- --generate assignment 50  # Generate 50x50 assignment problem");
+        Console.WriteLine();
+        Console.WriteLine("For problem generation help:");
+        Console.WriteLine("  dotnet run -- --generate");
+    }
+    
+    private static void RunBenchmarkMode()
+    {
+        Console.WriteLine("Running BenchmarkDotNet benchmarks...");
+        Console.WriteLine("This may take a while for large problems.");
+        Console.WriteLine();
         
-        // Set arc data
-        for (int i = 0; i < problem.ArcCount; i++)
-        {
-            var arc = new Arc(i);
-            solver.SetArcCost(arc, problem.Costs[i]);
-            solver.SetArcBounds(arc, problem.LowerBounds[i], problem.UpperBounds[i]);
-        }
+        BenchmarkRunner.Run<NetworkSimplexBenchmarks>();
+    }
+    
+    private static void RunStatisticsMode()
+    {
+        Console.WriteLine("Running single-pass statistics collection...");
+        Console.WriteLine();
+        
+        var solver = new SinglePassSolver();
+        solver.RunAllProblems();
+    }
+    
+    private static void RunComparisonMode()
+    {
+        Console.WriteLine("Running NetworkSimplex vs OR-Tools comparison...");
+        Console.WriteLine();
+        
+        RunComparison.RunPerformanceComparison();
     }
 }

@@ -1,21 +1,22 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Columns;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Jobs;
+using BenchmarkDotNet.Reports;
 using MinCostFlow.Core.Algorithms;
 using MinCostFlow.Core.Graphs;
-using MinCostFlow.Core.IO;
 using MinCostFlow.Core.Types;
+using MinCostFlow.Problems;
+using MinCostFlow.Problems.Models;
+using MinCostFlow.Problems.Sets;
 
 namespace MinCostFlow.Benchmarks
 {
     [MemoryDiagnoser]
-    [SimpleJob(RuntimeMoniker.Net80)]
     [Config(typeof(Config))]
     public class NetworkSimplexBenchmarks
     {
@@ -27,504 +28,210 @@ namespace MinCostFlow.Benchmarks
                 AddColumn(StatisticColumn.StdDev);
                 AddColumn(StatisticColumn.Min);
                 AddColumn(StatisticColumn.Max);
+                AddColumn(StatisticColumn.Iterations);
+                
+                // Single job with minimal iterations for all problems
+                AddJob(Job.ShortRun
+                    .WithLaunchCount(1)
+                    .WithWarmupCount(1)
+                    .WithIterationCount(3)
+                    .WithInvocationCount(1)
+                    .WithUnrollFactor(1));
             }
         }
 
-        private readonly List<BenchmarkProblem> _problems = new();
-
-        public class BenchmarkProblem
-        {
-            public string Name { get; set; } = null!;
-            public IGraph Graph { get; set; } = null!;
-            public long[] Supplies { get; set; } = null!;
-            public long[] Costs { get; set; } = null!;
-            public long[] LowerBounds { get; set; } = null!;
-            public long[] UpperBounds { get; set; } = null!;
-            public int NodeCount { get; set; }
-            public int ArcCount { get; set; }
-            public string? FilePath { get; set; }
-        }
+        private readonly ProblemRepository _repository = new();
+        private readonly Dictionary<string, MinCostFlowProblem> _problemCache = new();
+        
+        // Lists of problems by category for benchmarking
+        private List<MinCostFlowProblem> _smallProblems = new();
+        private List<MinCostFlowProblem> _mediumProblems = new();
+        private List<MinCostFlowProblem> _largeProblems = new();
+        private List<MinCostFlowProblem> _generatedProblems = new();
 
         [GlobalSetup]
         public void Setup()
         {
-            // First, add generated problems of various sizes
-            AddGeneratedProblems();
-
-            // Then, add DIMACS problems if available
-            AddDimacsProblemFiles();
+            // Load all problems and cache them
+            LoadAllProblems();
         }
 
-        private void AddGeneratedProblems()
+        private void LoadAllProblems()
         {
-            // Generate transportation problems of various sizes
-            var sizes = new[] { 100, 500, 1000, 5000, 10000 };
+            Console.WriteLine("Loading problems for benchmarking...");
             
-            foreach (var size in sizes)
+            // Load embedded problems dynamically
+            var allProblemsByCategory = StandardProblems.GetAllByCategory();
+            
+            // Categorize problems
+            if (allProblemsByCategory.TryGetValue("Small", out var small))
             {
-                // Create balanced sources/sinks for reasonable arc count
-                int sources = (int)Math.Sqrt(size);
-                int sinks = sources;
-                var problem = GenerateTransportationProblem(sources, sinks);
-                problem.Name = $"Transport_{size}";
-                _problems.Add(problem);
-            }
-
-            // Generate circulation problems
-            foreach (var size in new[] { 1000, 5000, 10000 })
-            {
-                var problem = GenerateCirculationProblem(size);
-                problem.Name = $"Circulation_{size}";
-                _problems.Add(problem);
+                _smallProblems = small;
+                Console.WriteLine($"Loaded {_smallProblems.Count} small problems");
             }
             
-            // Add a true 10,000 node sparse transport problem
-            var largeProblem = GenerateSparseTransportProblem(5000, 5000);
-            largeProblem.Name = "Transport_10000_sparse";
-            _problems.Add(largeProblem);
-            
-            // Add a simple valid 10,000 node problem for testing
-            var simpleLarge = GenerateSimpleLargeProblem(10000);
-            simpleLarge.Name = "Simple_10000";
-            _problems.Add(simpleLarge);
-        }
-
-        private void AddDimacsProblemFiles()
-        {
-            var benchmarkDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "dimacs");
-            if (!Directory.Exists(benchmarkDir))
+            if (allProblemsByCategory.TryGetValue("Medium", out var medium))
             {
-                Console.WriteLine($"DIMACS benchmark directory not found: {benchmarkDir}");
-                return;
+                _mediumProblems = medium;
+                Console.WriteLine($"Loaded {_mediumProblems.Count} medium problems");
             }
-
-            var dimacsFiles = Directory.GetFiles(benchmarkDir, "*.min", SearchOption.AllDirectories)
-                .Concat(Directory.GetFiles(benchmarkDir, "*.dmx", SearchOption.AllDirectories))
-                .ToList();
-
-            foreach (var file in dimacsFiles)
+            
+            if (allProblemsByCategory.TryGetValue("Large", out var large))
             {
-                try
+                _largeProblems = large;
+                Console.WriteLine($"Loaded {_largeProblems.Count} large problems");
+            }
+            
+            // Also include DIMACS problems in appropriate categories
+            if (allProblemsByCategory.TryGetValue("DIMACS", out var dimacs))
+            {
+                foreach (var problem in dimacs)
                 {
-                    var dimacsProblem = DimacsReader.ReadFromFile(file);
-                    var problem = new BenchmarkProblem
-                    {
-                        Name = Path.GetFileNameWithoutExtension(file),
-                        Graph = dimacsProblem.Graph,
-                        Supplies = dimacsProblem.NodeSupplies,
-                        Costs = dimacsProblem.ArcCosts,
-                        LowerBounds = dimacsProblem.ArcLowerBounds,
-                        UpperBounds = dimacsProblem.ArcUpperBounds,
-                        NodeCount = dimacsProblem.NodeCount,
-                        ArcCount = dimacsProblem.ArcCount,
-                        FilePath = file
-                    };
-                    _problems.Add(problem);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Failed to load DIMACS file {file}: {ex.Message}");
+                    if (problem.NodeCount <= 1000)
+                        _mediumProblems.Add(problem);
+                    else
+                        _largeProblems.Add(problem);
                 }
             }
+            
+            // Load generated problems
+            LoadGeneratedProblems();
+            
+            // Cache all problems for benchmark methods
+            CacheProblemsForBenchmarks();
         }
 
-        private BenchmarkProblem GenerateTransportationProblem(int sources, int sinks)
+        private void LoadGeneratedProblems()
         {
-            var builder = new GraphBuilder();
+            // Generate a few standard problems for benchmarking
+            Console.WriteLine("Generating standard benchmark problems...");
             
-            // Add source nodes
-            for (int i = 0; i < sources; i++)
+            // Add some standard transportation problems
+            var transportSizes = new[] { (10, 10), (50, 50), (100, 100) };
+            foreach (var (sources, sinks) in transportSizes)
             {
-                builder.AddNode(i);
-            }
-            
-            // Add sink nodes
-            for (int i = 0; i < sinks; i++)
-            {
-                builder.AddNode(sources + i);
-            }
-
-            var random = new Random(42); // Fixed seed for reproducibility
-
-            // Connect every source to every sink
-            for (int i = 0; i < sources; i++)
-            {
-                for (int j = 0; j < sinks; j++)
-                {
-                    builder.AddArc(i, sources + j);
-                }
-            }
-
-            var graph = builder.Build();
-            var totalNodes = sources + sinks;
-            var totalArcs = sources * sinks;
-
-            // Generate supplies and demands
-            var supplies = new long[totalNodes];
-            long totalSupply = 0;
-            
-            // Sources have positive supply
-            for (int i = 0; i < sources; i++)
-            {
-                supplies[i] = random.Next(10, 100);
-                totalSupply += supplies[i];
-            }
-            
-            // Distribute demand evenly among sinks
-            long demandPerSink = totalSupply / sinks;
-            long remainder = totalSupply % sinks;
-            
-            for (int i = 0; i < sinks; i++)
-            {
-                supplies[sources + i] = -demandPerSink;
-                if (i < remainder)
-                    supplies[sources + i]--;
-            }
-            
-            // Verify supply balance
-            long checkSum = 0;
-            for (int i = 0; i < totalNodes; i++)
-            {
-                checkSum += supplies[i];
-            }
-            if (checkSum != 0)
-            {
-                throw new InvalidOperationException($"Supply not balanced: {checkSum}");
-            }
-
-            // Generate costs and capacities
-            var costs = new long[totalArcs];
-            var lowerBounds = new long[totalArcs];
-            var upperBounds = new long[totalArcs];
-            
-            for (int i = 0; i < totalArcs; i++)
-            {
-                costs[i] = random.Next(1, 100);
-                lowerBounds[i] = 0;
-                upperBounds[i] = random.Next(50, 200);
-            }
-
-            return new BenchmarkProblem
-            {
-                Graph = graph,
-                Supplies = supplies,
-                Costs = costs,
-                LowerBounds = lowerBounds,
-                UpperBounds = upperBounds,
-                NodeCount = totalNodes,
-                ArcCount = totalArcs
-            };
-        }
-
-        private BenchmarkProblem GenerateSparseTransportProblem(int sources, int sinks)
-        {
-            var builder = new GraphBuilder();
-            
-            // Add source nodes
-            for (int i = 0; i < sources; i++)
-            {
-                builder.AddNode(i);
-            }
-            
-            // Add sink nodes
-            for (int i = 0; i < sinks; i++)
-            {
-                builder.AddNode(sources + i);
-            }
-
-            var random = new Random(42);
-            int arcCount = 0;
-            
-            // Create sparse connections - each source connects to ~20 sinks
-            // Ensure every sink is connected to at least one source
-            var sinkConnections = new HashSet<int>[sinks];
-            for (int i = 0; i < sinks; i++)
-            {
-                sinkConnections[i] = new HashSet<int>();
-            }
-            
-            int connectionsPerSource = Math.Min(20, sinks);
-            for (int i = 0; i < sources; i++)
-            {
-                var selectedSinks = new HashSet<int>();
+                var problem = _repository.GenerateTransportationProblem(
+                    sources: sources,
+                    sinks: sinks,
+                    supply: 1000 * Math.Max(sources, sinks));
+                    
+                if (problem.Metadata == null)
+                    problem.Metadata = new ProblemMetadata();
+                problem.Metadata.Name = $"Transport_{sources}x{sinks}_Gen";
                 
-                // First, connect to a sink that has no connections yet (if any)
-                for (int j = 0; j < sinks && selectedSinks.Count < connectionsPerSource; j++)
-                {
-                    if (sinkConnections[j].Count == 0)
-                    {
-                        selectedSinks.Add(j);
-                        sinkConnections[j].Add(i);
-                    }
-                }
+                _generatedProblems.Add(problem);
                 
-                // Then add random connections
-                while (selectedSinks.Count < connectionsPerSource)
-                {
-                    int j = random.Next(sinks);
-                    if (selectedSinks.Add(j))
-                    {
-                        sinkConnections[j].Add(i);
-                    }
-                }
+                // Add to appropriate category
+                var totalNodes = sources + sinks;
+                if (totalNodes <= 100)
+                    _mediumProblems.Add(problem);
+                else
+                    _largeProblems.Add(problem);
+            }
+            
+            // Add some circulation problems
+            foreach (var size in new[] { 1000, 5000 })
+            {
+                var problem = _repository.GenerateCirculationProblem(
+                    nodes: size,
+                    density: 0.05);
+                    
+                if (problem.Metadata == null)
+                    problem.Metadata = new ProblemMetadata();
+                problem.Metadata.Name = $"Circulation_{size}_Gen";
                 
-                foreach (var j in selectedSinks)
-                {
-                    builder.AddArc(i, sources + j);
-                    arcCount++;
-                }
-            }
-
-            var graph = builder.Build();
-            var totalNodes = sources + sinks;
-
-            // Generate supplies and demands
-            var supplies = new long[totalNodes];
-            long totalSupply = 0;
-            
-            // Sources have positive supply
-            for (int i = 0; i < sources; i++)
-            {
-                supplies[i] = random.Next(10, 100);
-                totalSupply += supplies[i];
+                _generatedProblems.Add(problem);
+                _largeProblems.Add(problem);
             }
             
-            // Distribute demand evenly among sinks
-            long demandPerSink = totalSupply / sinks;
-            long remainder = totalSupply % sinks;
-            
-            for (int i = 0; i < sinks; i++)
-            {
-                supplies[sources + i] = -demandPerSink;
-                if (i < remainder)
-                    supplies[sources + i]--;
-            }
-
-            // Generate costs and capacities
-            var costs = new long[arcCount];
-            var lowerBounds = new long[arcCount];
-            var upperBounds = new long[arcCount];
-            
-            for (int i = 0; i < arcCount; i++)
-            {
-                costs[i] = random.Next(1, 100);
-                lowerBounds[i] = 0;
-                // Ensure capacities are large enough to accommodate flow
-                upperBounds[i] = random.Next(1000, 5000);
-            }
-
-            return new BenchmarkProblem
-            {
-                Graph = graph,
-                Supplies = supplies,
-                Costs = costs,
-                LowerBounds = lowerBounds,
-                UpperBounds = upperBounds,
-                NodeCount = totalNodes,
-                ArcCount = arcCount
-            };
+            Console.WriteLine($"Generated {_generatedProblems.Count} problems");
         }
 
-        private BenchmarkProblem GenerateCirculationProblem(int nodeCount)
+        private void CacheProblemsForBenchmarks()
         {
-            var builder = new GraphBuilder();
-            
-            // Add nodes
-            for (int i = 0; i < nodeCount; i++)
+            // Cache all problems with their names for benchmark access
+            foreach (var problem in _smallProblems.Concat(_mediumProblems).Concat(_largeProblems))
             {
-                builder.AddNode(i);
+                var name = problem.Metadata?.Name ?? "Unknown";
+                _problemCache[name] = problem;
             }
-
-            var random = new Random(42);
-            
-            // Create a connected graph with ~3 arcs per node
-            int targetArcCount = nodeCount * 3;
-            int arcCount = 0;
-            
-            // First, create a cycle to ensure connectivity
-            for (int i = 0; i < nodeCount; i++)
-            {
-                builder.AddArc(i, (i + 1) % nodeCount);
-                arcCount++;
-            }
-            
-            // Add random arcs (avoid duplicates)
-            var existingArcs = new HashSet<(int, int)>();
-            for (int i = 0; i < nodeCount; i++)
-            {
-                existingArcs.Add((i, (i + 1) % nodeCount));
-            }
-            
-            int attempts = 0;
-            while (arcCount < targetArcCount && attempts < targetArcCount * 10)
-            {
-                int from = random.Next(nodeCount);
-                int to = random.Next(nodeCount);
-                attempts++;
-                
-                if (from != to && existingArcs.Add((from, to)))
-                {
-                    builder.AddArc(from, to);
-                    arcCount++;
-                }
-            }
-
-            var graph = builder.Build();
-
-            // Circulation has zero supplies
-            var supplies = new long[nodeCount];
-            
-            // Generate costs (including negative costs for interesting cycles)
-            var costs = new long[arcCount];
-            var lowerBounds = new long[arcCount];
-            var upperBounds = new long[arcCount];
-            
-            for (int i = 0; i < arcCount; i++)
-            {
-                costs[i] = random.Next(-20, 100);
-                lowerBounds[i] = 0;
-                upperBounds[i] = random.Next(10, 100);
-            }
-
-            return new BenchmarkProblem
-            {
-                Graph = graph,
-                Supplies = supplies,
-                Costs = costs,
-                LowerBounds = lowerBounds,
-                UpperBounds = upperBounds,
-                NodeCount = nodeCount,
-                ArcCount = arcCount
-            };
         }
 
-        private BenchmarkProblem GenerateSimpleLargeProblem(int nodeCount)
-        {
-            var builder = new GraphBuilder();
-            
-            // Create a simple path graph with some additional arcs
-            for (int i = 0; i < nodeCount; i++)
-            {
-                builder.AddNode(i);
-            }
-            
-            // Create a path
-            for (int i = 0; i < nodeCount - 1; i++)
-            {
-                builder.AddArc(i, i + 1);
-            }
-            
-            // Add some backward arcs for cycles
-            var random = new Random(42);
-            int additionalArcs = nodeCount / 2;
-            for (int i = 0; i < additionalArcs; i++)
-            {
-                int from = random.Next(nodeCount / 2, nodeCount);
-                int to = random.Next(0, from);
-                builder.AddArc(from, to);
-            }
-            
-            var graph = builder.Build();
-            int arcCount = nodeCount - 1 + additionalArcs;
-            
-            // Simple supply/demand: first node supplies, last node demands
-            var supplies = new long[nodeCount];
-            supplies[0] = 1000;
-            supplies[nodeCount - 1] = -1000;
-            
-            // Simple costs and large capacities
-            var costs = new long[arcCount];
-            var lowerBounds = new long[arcCount];
-            var upperBounds = new long[arcCount];
-            
-            for (int i = 0; i < arcCount; i++)
-            {
-                costs[i] = i < nodeCount - 1 ? 1 : 2; // Forward arcs cheaper
-                lowerBounds[i] = 0;
-                upperBounds[i] = 10000; // Large capacity
-            }
-            
-            return new BenchmarkProblem
-            {
-                Graph = graph,
-                Supplies = supplies,
-                Costs = costs,
-                LowerBounds = lowerBounds,
-                UpperBounds = upperBounds,
-                NodeCount = nodeCount,
-                ArcCount = arcCount
-            };
-        }
 
-        [Benchmark]
-        [ArgumentsSource(nameof(GetProblems))]
-        public SolverStatus SolveNetworkSimplex(BenchmarkProblem problem)
+        private SolverStatus SolveProblem(MinCostFlowProblem problem)
         {
             var solver = new NetworkSimplex(problem.Graph);
             
             // Set supplies
             for (int i = 0; i < problem.NodeCount; i++)
             {
-                solver.SetNodeSupply(new Node(i), problem.Supplies[i]);
+                solver.SetNodeSupply(new Node(i), problem.NodeSupplies[i]);
             }
             
             // Set arc data
             for (int i = 0; i < problem.ArcCount; i++)
             {
                 var arc = new Arc(i);
-                solver.SetArcCost(arc, problem.Costs[i]);
-                solver.SetArcBounds(arc, problem.LowerBounds[i], problem.UpperBounds[i]);
+                solver.SetArcCost(arc, problem.ArcCosts[i]);
+                solver.SetArcBounds(arc, problem.ArcLowerBounds[i], problem.ArcUpperBounds[i]);
             }
             
-            return solver.Solve();
-        }
-
-        public IEnumerable<BenchmarkProblem> GetProblems()
-        {
-            return _problems;
-        }
-
-        [Benchmark]
-        public void ValidatePerformanceTargets()
-        {
-            // Run the 10,000 node transport problem specifically
-            var problem = _problems.FirstOrDefault(p => p.Name == "Transport_10000");
-            if (problem == null)
-            {
-                throw new InvalidOperationException("10,000 node transport problem not found");
-            }
-
-            var solver = new NetworkSimplex(problem.Graph);
-            
-            // Set supplies
-            for (int i = 0; i < problem.NodeCount; i++)
-            {
-                solver.SetNodeSupply(new Node(i), problem.Supplies[i]);
-            }
-            
-            // Set arc data
-            for (int i = 0; i < problem.ArcCount; i++)
-            {
-                var arc = new Arc(i);
-                solver.SetArcCost(arc, problem.Costs[i]);
-                solver.SetArcBounds(arc, problem.LowerBounds[i], problem.UpperBounds[i]);
-            }
-            
-            var sw = Stopwatch.StartNew();
             var status = solver.Solve();
-            sw.Stop();
             
-            if (status != SolverStatus.Optimal)
+            // Don't record here - BenchmarkDotNet runs in isolation
+            
+            return status;
+        }
+
+        // Benchmark methods - dynamically run all loaded problems
+        [Benchmark]
+        [BenchmarkCategory("Small")]
+        [ArgumentsSource(nameof(SmallProblemNames))]
+        public SolverStatus BenchmarkSmallProblem(string problemName)
+        {
+            return SolveProblem(_problemCache[problemName]);
+        }
+        
+        [Benchmark] 
+        [BenchmarkCategory("Medium")]
+        [ArgumentsSource(nameof(MediumProblemNames))]
+        public SolverStatus BenchmarkMediumProblem(string problemName)
+        {
+            return SolveProblem(_problemCache[problemName]);
+        }
+        
+        [Benchmark]
+        [BenchmarkCategory("Large")]
+        [ArgumentsSource(nameof(LargeProblemNames))]
+        public SolverStatus BenchmarkLargeProblem(string problemName)
+        {
+            return SolveProblem(_problemCache[problemName]);
+        }
+        
+        // Provide problem names for benchmarking
+        public IEnumerable<string> SmallProblemNames()
+        {
+            foreach (var problem in _smallProblems)
             {
-                throw new InvalidOperationException($"Solver returned {status} for transport problem");
-            }
-            
-            Console.WriteLine($"10,000 node problem solved in {sw.ElapsedMilliseconds}ms");
-            
-            if (sw.ElapsedMilliseconds > 1000)
-            {
-                Console.WriteLine("WARNING: Performance target not met (> 1s for 10,000 nodes)");
+                yield return problem.Metadata?.Name ?? "Unknown";
             }
         }
+        
+        public IEnumerable<string> MediumProblemNames()
+        {
+            foreach (var problem in _mediumProblems)
+            {
+                yield return problem.Metadata?.Name ?? "Unknown";
+            }
+        }
+        
+        public IEnumerable<string> LargeProblemNames()
+        {
+            foreach (var problem in _largeProblems)
+            {
+                yield return problem.Metadata?.Name ?? "Unknown";
+            }
+        }
+
     }
 }

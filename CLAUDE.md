@@ -89,6 +89,10 @@ When implementing the C# port:
 4. Use unsafe code and SIMD where beneficial for performance
 5. Implement comprehensive tests comparing with LEMON output
 
+## Development Principles
+
+- Do not use dotnet script or create stand-alone console programs to figure out what is going on. Always create tests in the test suite to assist with understanding code flow.
+
 ## Progress Tracking
 
 Weekly progress is documented in `/docs/` following a standardized format:

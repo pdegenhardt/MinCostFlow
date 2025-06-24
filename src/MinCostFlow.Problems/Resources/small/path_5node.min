@@ -1,0 +1,11 @@
+c Simple path problem - 5 nodes
+c Optimal solution: 10 units flow on path 1->2->3->4->5
+c Arc costs: 2, 3, 1, 4 (total cost per unit = 10)
+c Optimal value: 10 * 10 = 100
+p min 5 4
+n 1 10
+n 5 -10
+a 1 2 0 10 2
+a 2 3 0 10 3
+a 3 4 0 10 1
+a 4 5 0 10 4

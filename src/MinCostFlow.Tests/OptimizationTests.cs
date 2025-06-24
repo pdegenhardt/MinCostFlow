@@ -2,6 +2,7 @@ using MinCostFlow.Core.Algorithms;
 using MinCostFlow.Core.Graphs;
 using MinCostFlow.Core.Types;
 using MinCostFlow.Core.Utils;
+using MinCostFlow.Core.Validation;
 using System;
 using Xunit;
 
@@ -52,6 +53,18 @@ public class OptimizationTests
         for (int i = 0; i < 6; i++)
         {
             Assert.Equal(baselineFlows[i], optimizedSolver.GetFlow(new Arc(i)));
+        }
+        
+        // Validate both solutions if optimal
+        if (baselineStatus == SolverStatus.Optimal)
+        {
+            var baselineValidator = new SolutionValidator(graph, baselineSolver);
+            var baselineResult = baselineValidator.Validate();
+            Assert.True(baselineResult.IsValid, "Baseline solution should be valid");
+            
+            var optimizedValidator = new SolutionValidator(graph, optimizedSolver);
+            var optimizedResult = optimizedValidator.Validate();
+            Assert.True(optimizedResult.IsValid, "Optimized solution should be valid");
         }
     }
     
@@ -105,6 +118,15 @@ public class OptimizationTests
         {
             var optimizedCost = optimizedSolver.GetTotalCost();
             Assert.Equal(baselineCost, optimizedCost);
+            
+            // Validate both solutions
+            var baselineValidator = new SolutionValidator(graph, baselineSolver);
+            var baselineResult = baselineValidator.Validate();
+            Assert.True(baselineResult.IsValid, "Baseline solution should be valid");
+            
+            var optimizedValidator = new SolutionValidator(graph, optimizedSolver);
+            var optimizedResult = optimizedValidator.Validate();
+            Assert.True(optimizedResult.IsValid, "Optimized solution should be valid");
         }
     }
     
@@ -147,26 +169,10 @@ public class OptimizationTests
             // Verify solution is optimal
             Assert.Equal(SolverStatus.Optimal, status);
             
-            // Verify flow conservation
-            for (int i = 0; i < 8; i++)
-            {
-                long flowIn = 0, flowOut = 0;
-                
-                // Calculate flow balance
-                int arcId = 0;
-                for (var arc = graph.FirstArc(); arc.IsValid; arc = graph.NextArc(arc))
-                {
-                    if (graph.Target(arc).Id == i)
-                        flowIn += solver.GetFlow(new Arc(arcId));
-                    if (graph.Source(arc).Id == i)
-                        flowOut += solver.GetFlow(new Arc(arcId));
-                    arcId++;
-                }
-                
-                long expectedSupply = (i == 0) ? 100 : (i == 7) ? -100 : 0;
-                long actualSupply = flowOut - flowIn;
-                Assert.Equal(expectedSupply, actualSupply);
-            }
+            // Validate solution comprehensively (includes flow conservation, bounds, optimality)
+            var validator = new SolutionValidator(graph, solver);
+            var result = validator.Validate();
+            Assert.True(result.IsValid, $"Solution with {pivotRule} pivot rule should be valid: {string.Join("; ", result.Errors)}");
             
             memoryPool.Dispose();
         }

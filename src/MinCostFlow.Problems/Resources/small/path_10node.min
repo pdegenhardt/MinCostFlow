@@ -1,0 +1,17 @@
+c Longer path problem - 10 nodes
+c Linear path 1->2->...->10
+c Each arc has cost = node ID (1->2 costs 1, 2->3 costs 2, etc.)
+c Total cost = 1+2+3+4+5+6+7+8+9 = 45
+c Optimal value: 20 * 45 = 900
+p min 10 9
+n 1 20
+n 10 -20
+a 1 2 0 20 1
+a 2 3 0 20 2
+a 3 4 0 20 3
+a 4 5 0 20 4
+a 5 6 0 20 5
+a 6 7 0 20 6
+a 7 8 0 20 7
+a 8 9 0 20 8
+a 9 10 0 20 9

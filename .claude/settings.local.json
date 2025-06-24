@@ -1,0 +1,51 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(mkdir:*)",
+      "Bash(dotnet build)",
+      "Bash(dotnet restore:*)",
+      "Bash(dotnet test:*)",
+      "Bash(ls:*)",
+      "Bash(dotnet --info)",
+      "Bash(dotnet run:*)",
+      "Bash(dotnet script:*)",
+      "Bash(dotnet build:*)",
+      "Bash(dotnet new:*)",
+      "Bash(dotnet add reference:*)",
+      "Bash(timeout:*)",
+      "Bash(rm:*)",
+      "Bash(dotnet clean:*)",
+      "Bash(rg:*)",
+      "Bash(/dev/null)",
+      "Bash(grep:*)",
+      "Bash(sed:*)",
+      "Bash(git init:*)",
+      "Bash(git branch:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git config:*)",
+      "Bash(gh repo create:*)",
+      "Bash(git remote add:*)",
+      "Bash(git push:*)",
+      "mcp__github__get_file_contents",
+      "Bash(gh repo view:*)",
+      "Bash(gh repo set-default:*)",
+      "Bash(gh auth:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(gh api:*)",
+      "Bash(gh repo sync:*)",
+      "Bash(mv:*)",
+      "Bash(dotnet sln add:*)",
+      "WebFetch(domain:lpsolve.sourceforge.net)",
+      "WebFetch(domain:lemon.cs.elte.hu)",
+      "Bash(true)",
+      "Bash(g++:*)"
+    ],
+    "deny": []
+  },
+  "enabledMcpjsonServers": [
+    "github",
+    "puppeteer"
+  ]
+}

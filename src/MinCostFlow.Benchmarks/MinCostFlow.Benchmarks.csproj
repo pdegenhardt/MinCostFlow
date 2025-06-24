@@ -9,10 +9,12 @@
 
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.13.10" />
+    <PackageReference Include="Google.OrTools" Version="9.8.3296" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\MinCostFlow.Core\MinCostFlow.Core.csproj" />
+    <ProjectReference Include="..\MinCostFlow.Problems\MinCostFlow.Problems.csproj" />
   </ItemGroup>
 
 </Project>
