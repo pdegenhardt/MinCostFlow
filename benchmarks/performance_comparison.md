@@ -1,236 +1,89 @@
 # Performance Comparison Report
-Generated: 2025-06-24 13:23:37 UTC
+Generated: 2025-06-26 06:40:05 UTC
 
 ## Summary Table
 
-| Problem | Nodes | Arcs | NetworkSimplex (ms) | OR-Tools (ms) | Winner | Speedup |
-|---------|------:|-----:|--------------------:|--------------:|--------|---------|
-| Small_Grid2x2 | 4 | 4 | 0.17 | 0.17 | OR-Tools | 1.04× |
-| Small_Diamond | 4 | 4 | 0.23 | 0.33 | NetworkSimplex | 1.43× |
-| Small_Simple4 | 4 | 5 | 0.17 | 0.19 | NetworkSimplex | 1.08× |
-| Small_Path5 | 5 | 4 | 0.23 | 0.26 | NetworkSimplex | 1.16× |
-| Small_Star | 5 | 8 | 0.19 | 0.16 | OR-Tools | 1.19× |
-| Small_Transport2x3 | 5 | 6 | 0.22 | 0.26 | NetworkSimplex | 1.16× |
-| Small_Cycle | 6 | 7 | 0.15 | 0.18 | NetworkSimplex | 1.24× |
-| Small_Assignment3x3 | 6 | 9 | 0.16 | 0.20 | NetworkSimplex | 1.30× |
-| Small_Path10 | 10 | 9 | 0.24 | 0.20 | OR-Tools | 1.21× |
-| LEMON_Test12 | 12 | 21 | 0.40 | 0.35 | OR-Tools | 1.14× |
-| Transport_100 | 20 | 100 | 0.36 | 0.44 | NetworkSimplex | 1.19× |
-| Transport_500 | 44 | 484 | 0.70 | 0.82 | NetworkSimplex | 1.16× |
-| Transport_5000 | 142 | 5,041 | 1.23 | 2.10 | NetworkSimplex | 1.71× |
-| DIMACS_Netgen8_08a | 256 | 2,048 | 1.52 | 3.02 | NetworkSimplex | 1.98× |
-| Circulation_1000 | 1,000 | 49,950 | 265.01 | 79.59 | OR-Tools | 3.33× |
-| DIMACS_Netgen8_10a | 1,024 | 8,192 | 6.19 | 15.01 | NetworkSimplex | 2.42× |
-| Circulation_5000 | 5,000 | 1,249,750 | 34509.02 | 2833.39 | OR-Tools | 12.18× |
-| Circulation_6000 | 6,000 | 1,799,700 | 61440.75 | 3667.54 | OR-Tools | 16.75× |
-| Path_10000 | 10,000 | 9,999 | 890.63 | 3371.47 | NetworkSimplex | 3.79× |
-| Grid_100x100 | 10,000 | 39,600 | 122.99 | 90.72 | OR-Tools | 1.36× |
+| Category | Problem | Nodes | Arcs | NetworkSimplex (ms) | CostScaling (ms) | OR-Tools (ms) | TarjanEnhanced (ms) | Winner | Best vs Worst |
+|----------|---------|------:|-----:|--------------------:|-----------------:|--------------:|--------------------:|--------|---------------|
+| **Assignment** | | | | | | | | | |
+| Assignment | Assignment_Assignment3x3 | 6 | 9 | 11.57 | 4.20 | 79.37 | 3.45 | TarjanEnhanced | 23.04× |
+| Assignment | Assignment_Assignment50x50 | 100 | 2,500 | 2.07 | 3.19 | 2.76 | 15.56 | NetworkSimplex | 7.53× |
+| Assignment | Assignment_Assignment5x5 | 10 | 25 | 0.58 | 0.67 | 0.51 | 0.83 | OR-Tools | 1.63× |
 
 ## Summary Statistics
-- NetworkSimplex wins: 12/20 (60.0%)
-- OR-Tools wins: 8/20 (40.0%)
-- All optimal solutions match: ✓
+- Total problems tested: 3
+- Problems solved by all four algorithms: 3
 
-## Detailed Results
+### Success Rates:
+- NetworkSimplex: 3/3 (100.0%)
+- CostScaling: 3/3 (100.0%)
+- OR-Tools: 3/3 (100.0%)
+- TarjanEnhanced: 3/3 (100.0%)
 
-### Small_Grid2x2
-- Nodes: 4
-- Arcs: 4
+### Performance Winners (when all four solve optimally):
+- NetworkSimplex wins: 1/3 (33.3%)
+- CostScaling wins: 0/3 (0.0%)
+- OR-Tools wins: 1/3 (33.3%)
+- TarjanEnhanced wins: 1/3 (33.3%)
 
-| Solver | Status | Time (ms) | Memory (KB) | Cost |
-|--------|--------|-----------|-------------|------|
-| NetworkSimplex | Optimal | 0.17 (0.14-0.26) | 6 | 75 |
-| OrTools | Optimal | 0.17 (0.16-0.18) | 13 | 75 |
+## Validation Summary
+- Total problems with solutions: 3
+- Validations passed: 12
+- Validations failed: 0
+- Solution files without optimal cost: 0
 
-### Small_Diamond
-- Nodes: 4
-- Arcs: 4
+## Detailed Results by Category
 
-| Solver | Status | Time (ms) | Memory (KB) | Cost |
-|--------|--------|-----------|-------------|------|
-| NetworkSimplex | Optimal | 0.23 (0.15-0.31) | 7 | 80 |
-| OrTools | Optimal | 0.33 (0.17-0.64) | 13 | 80 |
+### Assignment Problems
 
-### Small_Simple4
-- Nodes: 4
-- Arcs: 5
-
-| Solver | Status | Time (ms) | Memory (KB) | Cost |
-|--------|--------|-----------|-------------|------|
-| NetworkSimplex | Optimal | 0.17 (0.13-0.22) | 10 | 30 |
-| OrTools | Optimal | 0.19 (0.16-0.23) | 16 | 30 |
-
-### Small_Path5
-- Nodes: 5
-- Arcs: 4
-
-| Solver | Status | Time (ms) | Memory (KB) | Cost |
-|--------|--------|-----------|-------------|------|
-| NetworkSimplex | Optimal | 0.23 (0.17-0.31) | 8 | 100 |
-| OrTools | Optimal | 0.26 (0.18-0.33) | 12 | 100 |
-
-### Small_Star
-- Nodes: 5
-- Arcs: 8
-
-| Solver | Status | Time (ms) | Memory (KB) | Cost |
-|--------|--------|-----------|-------------|------|
-| NetworkSimplex | Optimal | 0.19 (0.14-0.24) | 16 | 90 |
-| OrTools | Optimal | 0.16 (0.15-0.18) | 16 | 90 |
-
-### Small_Transport2x3
-- Nodes: 5
-- Arcs: 6
-
-| Solver | Status | Time (ms) | Memory (KB) | Cost |
-|--------|--------|-----------|-------------|------|
-| NetworkSimplex | Optimal | 0.22 (0.19-0.24) | 13 | 85 |
-| OrTools | Optimal | 0.26 (0.21-0.31) | 16 | 85 |
-
-### Small_Cycle
-- Nodes: 6
-- Arcs: 7
-
-| Solver | Status | Time (ms) | Memory (KB) | Cost |
-|--------|--------|-----------|-------------|------|
-| NetworkSimplex | Optimal | 0.15 (0.14-0.16) | 16 | 50 |
-| OrTools | Optimal | 0.18 (0.16-0.26) | 16 | 50 |
-
-### Small_Assignment3x3
+#### Assignment_Assignment3x3
 - Nodes: 6
 - Arcs: 9
+- Worst-case runtime: 79.37 ms
 
 | Solver | Status | Time (ms) | Memory (KB) | Cost |
 |--------|--------|-----------|-------------|------|
-| NetworkSimplex | Optimal | 0.16 (0.14-0.18) | 14 | 5 |
-| OrTools | Optimal | 0.20 (0.16-0.29) | 16 | 5 |
+| OrTools | Optimal | 79.37 (79.37-79.37) | 16 | 5 |
+| CostScaling | Optimal | 4.20 (4.20-4.20) | 12 | 5 |
+| NetworkSimplex | Optimal | 11.57 (11.57-11.57) | 12 | 5 |
+| TarjanEnhanced | Optimal | 3.45 (3.45-3.45) | 12 | 5 |
 
-### Small_Path10
+#### Assignment_Assignment50x50
+- Nodes: 100
+- Arcs: 2,500
+- Worst-case runtime: 15.56 ms
+
+| Solver | Status | Time (ms) | Memory (KB) | Cost |
+|--------|--------|-----------|-------------|------|
+| OrTools | Optimal | 2.76 (2.76-2.76) | 717 | 50 |
+| CostScaling | Optimal | 3.19 (3.19-3.19) | 493 | 50 |
+| NetworkSimplex | Optimal | 2.07 (2.07-2.07) | 150 | 50 |
+| TarjanEnhanced | Optimal | 15.56 (15.56-15.56) | 153 | 50 |
+
+#### Assignment_Assignment5x5
 - Nodes: 10
-- Arcs: 9
+- Arcs: 25
+- Worst-case runtime: 0.83 ms
 
 | Solver | Status | Time (ms) | Memory (KB) | Cost |
 |--------|--------|-----------|-------------|------|
-| NetworkSimplex | Optimal | 0.24 (0.15-0.30) | 13 | 900 |
-| OrTools | Optimal | 0.20 (0.17-0.28) | 13 | 900 |
+| OrTools | Optimal | 0.51 (0.51-0.51) | 20 | 10 |
+| CostScaling | Optimal | 0.67 (0.67-0.67) | 20 | 10 |
+| NetworkSimplex | Optimal | 0.58 (0.58-0.58) | 20 | 10 |
+| TarjanEnhanced | Optimal | 0.83 (0.83-0.83) | 12 | 10 |
 
-### LEMON_Test12
-- Nodes: 12
-- Arcs: 21
+## Performance Scatter Plot
 
-| Solver | Status | Time (ms) | Memory (KB) | Cost |
-|--------|--------|-----------|-------------|------|
-| NetworkSimplex | Optimal | 0.40 (0.22-0.95) | 11 | 5,240 |
-| OrTools | Optimal | 0.35 (0.27-0.45) | 19 | 5,240 |
+![Performance Scatter Plot](performance_scatter_plot.png)
 
-### Transport_100
-- Nodes: 20
-- Arcs: 100
+*Note: The scatter plot shows runtime (ms) vs number of arcs for each solver on logarithmic scales.*
+*NetworkSimplex (blue circles), CostScaling (green squares), OR-Tools (red triangles), TarjanEnhanced (orange diamonds)*
 
-| Solver | Status | Time (ms) | Memory (KB) | Cost |
-|--------|--------|-----------|-------------|------|
-| NetworkSimplex | Optimal | 0.36 (0.31-0.44) | 16 | 7,400 |
-| OrTools | Optimal | 0.44 (0.38-0.49) | 47 | 7,400 |
+### Notable Data Points
 
-### Transport_500
-- Nodes: 44
-- Arcs: 484
+| Problem | Arcs | NS (ms) | CS (ms) | OR (ms) | TE (ms) | Fastest |
+|---------|-----:|--------:|--------:|--------:|--------:|---------|
+| Assignment_Assignment50x50 | 2,500 | 2.07 | 3.19 | 2.76 | 15.56 | NS |
+| Assignment_Assignment5x5 | 25 | 0.58 | 0.67 | 0.51 | 0.83 | OR |
+| Assignment_Assignment3x3 | 9 | 11.57 | 4.20 | 79.37 | 3.45 | TE |
 
-| Solver | Status | Time (ms) | Memory (KB) | Cost |
-|--------|--------|-----------|-------------|------|
-| NetworkSimplex | Optimal | 0.70 (0.59-0.88) | 40 | 6,300 |
-| OrTools | Optimal | 0.82 (0.60-1.31) | 170 | 6,300 |
-
-### Transport_5000
-- Nodes: 142
-- Arcs: 5,041
-
-| Solver | Status | Time (ms) | Memory (KB) | Cost |
-|--------|--------|-----------|-------------|------|
-| NetworkSimplex | Optimal | 1.23 (0.92-2.11) | 273 | 2,576 |
-| OrTools | Optimal | 2.10 (1.77-2.85) | 1477 | 2,576 |
-
-### DIMACS_Netgen8_08a
-- Nodes: 256
-- Arcs: 2,048
-
-| Solver | Status | Time (ms) | Memory (KB) | Cost |
-|--------|--------|-----------|-------------|------|
-| NetworkSimplex | Optimal | 1.52 (1.28-1.95) | 144 | 142,274,536 |
-| OrTools | Optimal | 3.02 (2.55-3.79) | 708 | 142,274,536 |
-
-### Circulation_1000
-- Nodes: 1,000
-- Arcs: 49,950
-
-| Solver | Status | Time (ms) | Memory (KB) | Cost |
-|--------|--------|-----------|-------------|------|
-| NetworkSimplex | Optimal | 265.01 (248.70-274.44) | 2527 | -21,815,005 |
-| OrTools | Optimal | 79.59 (70.67-86.91) | 9852 | -21,815,005 |
-
-### DIMACS_Netgen8_10a
-- Nodes: 1,024
-- Arcs: 8,192
-
-| Solver | Status | Time (ms) | Memory (KB) | Cost |
-|--------|--------|-----------|-------------|------|
-| NetworkSimplex | Optimal | 6.19 (4.33-11.35) | 531 | 369,269,289 |
-| OrTools | Optimal | 15.01 (13.26-19.01) | 1467 | 369,269,289 |
-
-### Circulation_5000
-- Nodes: 5,000
-- Arcs: 1,249,750
-
-| Solver | Status | Time (ms) | Memory (KB) | Cost |
-|--------|--------|-----------|-------------|------|
-| NetworkSimplex | Optimal | 34509.02 (34454.33-34554.49) | 60415 | -571,982,353 |
-| OrTools | Optimal | 2833.39 (2745.19-2935.15) | 143979 | -571,982,353 |
-
-### Circulation_6000
-- Nodes: 6,000
-- Arcs: 1,799,700
-
-| Solver | Status | Time (ms) | Memory (KB) | Cost |
-|--------|--------|-----------|-------------|------|
-| NetworkSimplex | Optimal | 61440.75 (60418.39-62205.91) | 86850 | -827,519,645 |
-| OrTools | Optimal | 3667.54 (3559.64-3769.71) | 298318 | -827,519,645 |
-
-### Path_10000
-- Nodes: 10,000
-- Arcs: 9,999
-
-| Solver | Status | Time (ms) | Memory (KB) | Cost |
-|--------|--------|-----------|-------------|------|
-| NetworkSimplex | Optimal | 890.63 (822.07-1000.47) | 1696 | 54,780,000 |
-| OrTools | Optimal | 3371.47 (3238.49-3468.09) | 3037 | 54,780,000 |
-
-### Grid_100x100
-- Nodes: 10,000
-- Arcs: 39,600
-
-| Solver | Status | Time (ms) | Memory (KB) | Cost |
-|--------|--------|-----------|-------------|------|
-| NetworkSimplex | Optimal | 122.99 (116.96-131.17) | 3113 | 562,000 |
-| OrTools | Optimal | 90.72 (87.72-96.21) | 13081 | 562,000 |
-
-## Scalability Analysis
-
-- NetworkSimplex scaling: ~0.032141 ms per arc
-- OR-Tools scaling: ~0.001996 ms per arc
-- Better scaling: OR-Tools
-
-### What This Means
-
-The scalability analysis uses linear regression to estimate how solution time increases with problem size (number of arcs):
-
-- **NetworkSimplex**: Each additional arc adds approximately 0.032 ms to solution time
-- **OR-Tools**: Each additional arc adds approximately 0.002 ms to solution time
-
-**OR-Tools** scales better, with approximately 16.1× better performance growth as problem size increases.
-
-**Practical Example**: For a problem with 100,000 arcs:
-- NetworkSimplex estimated time: 3214 ms (3.2 seconds)
-- OR-Tools estimated time: 200 ms (0.2 seconds)
-
-*Note: This is a simplified linear model. Actual performance may vary based on problem structure, 
-density, and other characteristics. Network flow algorithms typically have polynomial complexity.*

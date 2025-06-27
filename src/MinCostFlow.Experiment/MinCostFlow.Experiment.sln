@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36202.13 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinCostFlow.Experiment", "MinCostFlow.Experiment\MinCostFlow.Experiment.csproj", "{BED26DF4-AA06-4964-BFB4-63FF100FFBBA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinCostFlow.Experiment.Test", "..\MinCostFlow.Experiment.Test\MinCostFlow.Experiment.Test.csproj", "{467103C0-B715-48AB-97CA-A026CCCC7DD1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BED26DF4-AA06-4964-BFB4-63FF100FFBBA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BED26DF4-AA06-4964-BFB4-63FF100FFBBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BED26DF4-AA06-4964-BFB4-63FF100FFBBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BED26DF4-AA06-4964-BFB4-63FF100FFBBA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{467103C0-B715-48AB-97CA-A026CCCC7DD1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{467103C0-B715-48AB-97CA-A026CCCC7DD1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{467103C0-B715-48AB-97CA-A026CCCC7DD1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{467103C0-B715-48AB-97CA-A026CCCC7DD1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F6CC71EC-5B47-4C66-BC44-F49A7E214405}
+	EndGlobalSection
+EndGlobal

@@ -1,19 +1,18 @@
-namespace MinCostFlow.Problems.Models
+namespace MinCostFlow.Problems.Models;
+
+/// <summary>
+/// Represents a minimum cost flow problem read from DIMACS format.
+/// </summary>
+public class DimacsMinCostFlowProblem : MinCostFlowProblem
 {
     /// <summary>
-    /// Represents a minimum cost flow problem read from DIMACS format.
+    /// Creates a new instance of DimacsMinCostFlowProblem.
     /// </summary>
-    public class DimacsMinCostFlowProblem : MinCostFlowProblem
+    public DimacsMinCostFlowProblem()
     {
-        /// <summary>
-        /// Creates a new instance of DimacsMinCostFlowProblem.
-        /// </summary>
-        public DimacsMinCostFlowProblem()
+        Metadata = new ProblemMetadata
         {
-            Metadata = new ProblemMetadata
-            {
-                Source = "DIMACS"
-            };
-        }
+            Source = "DIMACS"
+        };
     }
 }

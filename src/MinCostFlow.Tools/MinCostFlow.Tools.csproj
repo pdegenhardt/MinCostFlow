@@ -11,6 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="..\MinCostFlow.Core\MinCostFlow.Core.csproj" />
     <ProjectReference Include="..\MinCostFlow.Problems\MinCostFlow.Problems.csproj" />
+    <ProjectReference Include="..\MinCostFlow.Benchmarks\MinCostFlow.Benchmarks.csproj" />
   </ItemGroup>
 
 </Project>

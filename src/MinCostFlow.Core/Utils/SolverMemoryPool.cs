@@ -85,8 +85,11 @@ public sealed class SolverMemoryPool : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void ReturnIntArray(int[] array, bool clearArray = false)
     {
-        if (array == null) return;
-        
+        if (array == null)
+        {
+            return;
+        }
+
         // Check if it's a pre-allocated buffer
         for (int i = 0; i < CommonIntSizes.Length; i++)
         {
@@ -120,8 +123,11 @@ public sealed class SolverMemoryPool : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void ReturnLongArray(long[] array, bool clearArray = false)
     {
-        if (array == null) return;
-        
+        if (array == null)
+        {
+            return;
+        }
+
         // Check if it's a pre-allocated buffer
         for (int i = 0; i < CommonLongSizes.Length; i++)
         {
@@ -145,7 +151,9 @@ public sealed class SolverMemoryPool : IDisposable
     public void ReturnSByteArray(sbyte[] array, bool clearArray = false)
     {
         if (array != null)
+        {
             _sbytePool.Return(array, clearArray);
+        }
     }
     
     private static void WarmUpPool<T>(ArrayPool<T> pool, int size)
@@ -163,40 +171,23 @@ public sealed class SolverMemoryPool : IDisposable
 /// <summary>
 /// Scoped rental of an array from memory pool.
 /// </summary>
-public readonly struct PooledArray<T> : IDisposable
+public readonly struct PooledArray<T>(ArrayPool<T> pool, int minimumLength, bool clearOnReturn = false) : IDisposable
 {
-    private readonly ArrayPool<T> _pool;
-    private readonly T[] _array;
-    private readonly bool _clearOnReturn;
+    private readonly ArrayPool<T> _pool = pool;
+    private readonly T[] _array = pool.Rent(minimumLength);
+    private readonly bool _clearOnReturn = clearOnReturn;
     
     public T[] Array => _array;
     public int Length => _array.Length;
-    
-    public PooledArray(ArrayPool<T> pool, int minimumLength, bool clearOnReturn = false)
-    {
-        _pool = pool;
-        _array = pool.Rent(minimumLength);
-        _clearOnReturn = clearOnReturn;
-    }
-    
+
     public void Dispose()
     {
         if (_array != null)
+        {
             _pool.Return(_array, _clearOnReturn);
+        }
     }
     
     public Span<T> AsSpan() => _array.AsSpan();
     public Span<T> AsSpan(int length) => _array.AsSpan(0, length);
-}
-
-/// <summary>
-/// Extension methods for memory pool usage.
-/// </summary>
-public static class MemoryPoolExtensions
-{
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static PooledArray<T> RentScoped<T>(this ArrayPool<T> pool, int minimumLength, bool clearOnReturn = false)
-    {
-        return new PooledArray<T>(pool, minimumLength, clearOnReturn);
-    }
 }

@@ -40,7 +40,9 @@
       "WebFetch(domain:lpsolve.sourceforge.net)",
       "WebFetch(domain:lemon.cs.elte.hu)",
       "Bash(true)",
-      "Bash(g++:*)"
+      "Bash(g++:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(TARJAN_DEBUG=1 dotnet test --filter \"TarjanEnhancedKnapzackDebugTest\" --logger \"console;verbosity=normal\" 2 >& 1)"
     ],
     "deny": []
   },

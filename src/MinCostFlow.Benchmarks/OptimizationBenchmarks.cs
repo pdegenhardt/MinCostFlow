@@ -1,8 +1,8 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
-using MinCostFlow.Core.Algorithms;
-using MinCostFlow.Core.Graphs;
-using MinCostFlow.Core.Types;
+using MinCostFlow.Core.Lemon.Algorithms;
+using MinCostFlow.Core.Lemon.Graphs;
+using MinCostFlow.Core.Lemon.Types;
 using MinCostFlow.Core.Utils;
 using System;
 
@@ -68,19 +68,19 @@ public class OptimizationBenchmarks
         return solver.Solve();
     }
     
-    // Optimized potential update only
-    [Benchmark]
-    [Arguments("Small")]
-    [Arguments("Medium")]
-    [Arguments("Large")]
-    public SolverStatus SolveOptimizedPotentialUpdate(string size)
-    {
-        var graph = GetGraph(size);
-        var solver = new NetworkSimplex(graph);
-        solver.EnableOptimizedPotentialUpdate(true);
-        SetupProblem(solver, graph);
-        return solver.Solve();
-    }
+    // Optimized potential update only - removed as it was ineffective
+    // [Benchmark]
+    // [Arguments("Small")]
+    // [Arguments("Medium")]
+    // [Arguments("Large")]
+    // public SolverStatus SolveOptimizedPotentialUpdate(string size)
+    // {
+    //     var graph = GetGraph(size);
+    //     var solver = new NetworkSimplex(graph);
+    //     solver.EnableOptimizedPotentialUpdate(true);
+    //     SetupProblem(solver, graph);
+    //     return solver.Solve();
+    // }
     
     // Both optimizations
     [Benchmark]
@@ -92,7 +92,7 @@ public class OptimizationBenchmarks
         var graph = GetGraph(size);
         var solver = new NetworkSimplex(graph);
         solver.EnableOptimizedPivot(true);
-        solver.EnableOptimizedPotentialUpdate(true);
+        // solver.EnableOptimizedPotentialUpdate(true); // Removed - ineffective
         SetupProblem(solver, graph);
         return solver.Solve();
     }
@@ -107,7 +107,7 @@ public class OptimizationBenchmarks
         var graph = GetGraph(size);
         var solver = new NetworkSimplex(graph);
         solver.EnableOptimizedPivot(true);
-        solver.EnableOptimizedPotentialUpdate(true);
+        // solver.EnableOptimizedPotentialUpdate(true); // Removed - ineffective
         solver.SetMemoryPool(_memoryPool);
         SetupProblem(solver, graph);
         return solver.Solve();
@@ -123,7 +123,7 @@ public class OptimizationBenchmarks
         var graph = GetGraph(size);
         var solver = new NetworkSimplex(graph);
         solver.EnableOptimizedPivot(true);
-        solver.EnableOptimizedPotentialUpdate(true);
+        // solver.EnableOptimizedPotentialUpdate(true); // Removed - ineffective
         solver.SetPivotRule(pivotRule);
         SetupProblem(solver, graph);
         return solver.Solve();

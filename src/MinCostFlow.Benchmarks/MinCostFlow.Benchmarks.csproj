@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.13.10" />
     <PackageReference Include="Google.OrTools" Version="9.8.3296" />
+    <PackageReference Include="ScottPlot" Version="5.0.34" />
   </ItemGroup>
 
   <ItemGroup>
