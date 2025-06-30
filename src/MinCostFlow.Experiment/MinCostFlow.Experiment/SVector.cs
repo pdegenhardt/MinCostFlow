@@ -67,7 +67,7 @@ public class SVector<TIndex, T>
 
         for (int i = 0; i < newCapacity - _size; i++)
         {
-            newData.Add(default(T));
+            newData.Add(default);
         }
 
         _data = newData;

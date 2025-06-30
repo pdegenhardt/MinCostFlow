@@ -7,6 +7,7 @@ using MinCostFlow.Core.Lemon.Types;
 using MinCostFlow.Core.Lemon.Validation;
 using MinCostFlow.Problems;
 using MinCostFlow.Problems.Models;
+using MinCostFlow.Problems.Resources;
 using MinCostFlow.Problems.Sets;
 using Xunit;
 using Xunit.Abstractions;
@@ -31,15 +32,14 @@ public class SolverComparisonTests(ITestOutputHelper output)
     [InlineData("Small_Transport2x3")]
     public void SmallProblems_BothSolversAgreeOnOptimalCost(string problemType)
     {
-        var smallProblems = StandardProblems.GetByCategory("Small").ToList();
         MinCostFlowProblem problem = problemType switch
         {
-            "Small_Path5" => smallProblems.First(p => p.Metadata?.Name == "path_5node"),
-            "Small_Path10" => smallProblems.First(p => p.Metadata?.Name == "path_10node"),
-            "Small_Grid2x2" => smallProblems.First(p => p.Metadata?.Name == "grid_2x2"),
-            "Small_Diamond" => smallProblems.First(p => p.Metadata?.Name == "diamond_graph"),
-            "Small_Assignment3x3" => smallProblems.First(p => p.Metadata?.Name == "assignment_3x3"),
-            "Small_Transport2x3" => smallProblems.First(p => p.Metadata?.Name == "transport_2x3"),
+            "Small_Path5" => ProblemLoader.Load(EmbeddedProblems.Path.Path5Node),
+            "Small_Path10" => ProblemLoader.Load(EmbeddedProblems.Path.Path10Node),
+            "Small_Grid2x2" => ProblemLoader.Load(EmbeddedProblems.Grid.Grid2x2),
+            "Small_Diamond" => ProblemLoader.Load(EmbeddedProblems.Path.DiamondGraph),
+            "Small_Assignment3x3" => ProblemLoader.Load(EmbeddedProblems.Assignment.Assignment3x3),
+            "Small_Transport2x3" => ProblemLoader.Load(EmbeddedProblems.Transport.Transport2x3),
             _ => throw new ArgumentException($"Unknown problem type: {problemType}")
         };
 
@@ -51,11 +51,10 @@ public class SolverComparisonTests(ITestOutputHelper output)
     [InlineData("DIMACS_Netgen8_10a")]
     public void DimacsProblems_BothSolversAgreeOnOptimalCost(string problemType)
     {
-        var dimacsProblems = StandardProblems.GetByCategory("DIMACS").ToList();
         MinCostFlowProblem problem = problemType switch
         {
-            "DIMACS_Netgen8_08a" => dimacsProblems.First(p => p.Metadata?.Name == "netgen_8_08a"),
-            "DIMACS_Netgen8_10a" => dimacsProblems.First(p => p.Metadata?.Name == "netgen_8_10a"),
+            "DIMACS_Netgen8_08a" => ProblemLoader.Load(EmbeddedProblems.Netgen.Netgen8_08a),
+            "DIMACS_Netgen8_10a" => ProblemLoader.Load(EmbeddedProblems.Netgen.Netgen8_10a),
             _ => throw new ArgumentException($"Unknown problem type: {problemType}")
         };
 
@@ -63,10 +62,10 @@ public class SolverComparisonTests(ITestOutputHelper output)
     }
 
     [Theory]
-    [InlineData(100, 10, 10)]
-    [InlineData(500, 22, 22)]
-    [InlineData(1000, 32, 32)]
-    public void GeneratedTransportationProblems_BothSolversAgree(int size, int sources, int sinks)
+    [InlineData(10, 10)]
+    [InlineData(22, 22)]
+    [InlineData(32, 32)]
+    public void GeneratedTransportationProblems_BothSolversAgree(int sources, int sinks)
     {
         var problem = _repository.GenerateTransportationProblem(sources, sinks, 1000);
         var problemName = $"Transport_{sources}x{sinks}";

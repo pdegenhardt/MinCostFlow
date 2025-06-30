@@ -285,4 +285,90 @@ public class ReverseArcStaticGraphTests : GraphBaseTests
         Assert.Throws<ArgumentException>(() => 
             graph.OutgoingArcsStartingFrom(0, -arc).ToList());
     }
+
+    [Fact]
+    public void IMaxFlowGraph_HasNegativeReverseArcs_ShouldBeTrue()
+    {
+        // Arrange
+        var graph = new ReverseArcStaticGraph();
+        var maxFlowGraph = (IMaxFlowGraph)graph;
+
+        // Assert
+        maxFlowGraph.HasNegativeReverseArcs.Should().BeTrue();
+    }
+
+    [Fact]
+    public void IMaxFlowGraph_OppositeArc_ShouldReturnNegativeArc()
+    {
+        // Arrange
+        var graph = new ReverseArcStaticGraph();
+        var maxFlowGraph = (IMaxFlowGraph)graph;
+        graph.AddNode(0);
+        graph.AddNode(1);
+        var arc = graph.AddArc(0, 1);
+        graph.Build();
+
+        // Act & Assert
+        maxFlowGraph.OppositeArc(arc).Should().Be(-arc);
+        maxFlowGraph.OppositeArc(-arc).Should().Be(arc);
+        ReverseArcStaticGraph.OppositeArc(arc).Should().Be(-arc);
+    }
+
+    [Fact]
+    public void OutgoingOrOppositeIncomingArcsStartingFrom_ShouldResumeIteration()
+    {
+        // Arrange
+        var graph = new ReverseArcStaticGraph();
+        graph.AddNode(0);
+        graph.AddNode(1);
+        graph.AddNode(2);
+        
+        var arc01 = graph.AddArc(0, 1);
+        var arc02 = graph.AddArc(0, 2);
+        var arc10 = graph.AddArc(1, 0);
+        var arc20 = graph.AddArc(2, 0);
+        graph.Build();
+
+        // Act - Start from arc01 (first outgoing arc)
+        var arcsFromArc01 = graph.OutgoingOrOppositeIncomingArcsStartingFrom(0, arc01).ToList();
+        
+        // Assert - Should get both outgoing arcs and opposite incoming arcs
+        arcsFromArc01.Should().Contain(arc01);
+        arcsFromArc01.Should().Contain(arc02);
+        arcsFromArc01.Should().Contain(-arc10);
+        arcsFromArc01.Should().Contain(-arc20);
+
+        // Act - Start from an opposite incoming arc
+        var arcsFromOpposite = graph.OutgoingOrOppositeIncomingArcsStartingFrom(0, -arc10).ToList();
+        
+        // Assert
+        arcsFromOpposite.Should().Contain(-arc10);
+        arcsFromOpposite.Should().Contain(-arc20);
+    }
+
+    [Fact]
+    public void OutgoingOrOppositeIncomingArcs_AlreadyExists()
+    {
+        // Arrange
+        var graph = new ReverseArcStaticGraph();
+        graph.AddNode(0);
+        graph.AddNode(1);
+        graph.AddNode(2);
+        
+        var arc01 = graph.AddArc(0, 1);
+        var arc02 = graph.AddArc(0, 2);
+        var arc10 = graph.AddArc(1, 0);
+        var arc20 = graph.AddArc(2, 0);
+        graph.Build();
+
+        // Act
+        var allArcs = graph.OutgoingOrOppositeIncomingArcs(0).ToList();
+
+        // Assert - Should have 2 outgoing and 2 opposite incoming
+        allArcs.Should().HaveCount(4);
+        allArcs.Should().Contain(arc01);
+        allArcs.Should().Contain(arc02);
+        allArcs.Should().Contain(-arc10);
+        allArcs.Should().Contain(-arc20);
+    }
 }

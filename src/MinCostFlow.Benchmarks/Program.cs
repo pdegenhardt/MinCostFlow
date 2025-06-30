@@ -58,6 +58,10 @@ public class Program
         {
             BenchmarkRunner.Run<GortGraphBenchmarks>();
         }
+        else if (args.Contains("--maxflow") || args.Contains("-M"))
+        {
+            BenchmarkRunner.Run<MaxFlowBenchmarks>();
+        }
         else
         {
             // Default to statistics mode

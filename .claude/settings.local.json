@@ -42,7 +42,8 @@
       "Bash(true)",
       "Bash(g++:*)",
       "WebFetch(domain:github.com)",
-      "Bash(TARJAN_DEBUG=1 dotnet test --filter \"TarjanEnhancedKnapzackDebugTest\" --logger \"console;verbosity=normal\" 2 >& 1)"
+      "Bash(TARJAN_DEBUG=1 dotnet test --filter \"TarjanEnhancedKnapzackDebugTest\" --logger \"console;verbosity=normal\" 2 >& 1)",
+      "Bash(dotnet:*)"
     ],
     "deny": []
   },

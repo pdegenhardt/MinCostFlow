@@ -8,7 +8,7 @@ namespace MinCostFlow.Core.Gort;
 /// Memory-efficient static graph implementation with fast iteration.
 /// Requires Build() to be called before use.
 /// </summary>
-public class StaticGraph : IGraphBase
+public class StaticGraph : IMaxFlowGraph
 {
     // Node data
     private int _numNodes;
@@ -242,4 +242,48 @@ public class StaticGraph : IGraphBase
             yield return i;
         }
     }
+
+    #region IMaxFlowGraph Implementation
+
+    public bool HasNegativeReverseArcs => false;
+
+    public int OppositeArc(int arc)
+    {
+        // For static graphs without built-in reverse arcs, we need to find the arc
+        // that goes in the opposite direction (head->tail instead of tail->head)
+        if (!_built)
+            throw new InvalidOperationException("Must call Build() first");
+        if (!IsArcValid(arc))
+            throw new ArgumentOutOfRangeException(nameof(arc));
+            
+        int tail = _tail![arc];
+        int head = _head![arc];
+        
+        // Search for an arc from head to tail
+        int start = _startPos![head];
+        int end = _startPos![head + 1];
+        
+        for (int i = start; i < end; i++)
+        {
+            if (_head[i] == tail)
+                return i;
+        }
+        
+        // No opposite arc found
+        throw new InvalidOperationException($"No opposite arc found for arc {arc} ({tail}->{head})");
+    }
+
+    public IEnumerable<int> OutgoingOrOppositeIncomingArcs(int node)
+    {
+        // For standard graphs, this is just the outgoing arcs
+        return OutgoingArcs(node);
+    }
+
+    public IEnumerable<int> OutgoingOrOppositeIncomingArcsStartingFrom(int node, int arc)
+    {
+        // For standard graphs, this is just the outgoing arcs starting from the given arc
+        return OutgoingArcsStartingFrom(node, arc);
+    }
+
+    #endregion
 }

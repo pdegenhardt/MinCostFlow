@@ -52,7 +52,7 @@ public class StaticGraphTests : GraphBaseTests
         permutation.Should().HaveCount(4);
         
         // Verify the permutation maps old indices to new indices correctly
-        permutation[arc1].Should().Be(2);
+        permutation![arc1].Should().Be(2);
         permutation[arc2].Should().Be(0);
         permutation[arc3].Should().Be(3);
         permutation[arc4].Should().Be(1);
@@ -84,7 +84,7 @@ public class StaticGraphTests : GraphBaseTests
 
         // Assert
         permutation.Should().NotBeNull();
-        GraphUtilities.IsIdentityPermutation(permutation).Should().BeTrue();
+        GraphUtilities.IsIdentityPermutation(permutation!).Should().BeTrue();
     }
 
     [Fact]

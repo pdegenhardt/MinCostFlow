@@ -8,7 +8,7 @@ namespace MinCostFlow.Core.Gort;
 /// Memory-efficient static graph implementation with reverse arc support.
 /// Requires Build() to be called before use.
 /// </summary>
-public class ReverseArcStaticGraph : IGraphBase
+public class ReverseArcStaticGraph : IMaxFlowGraph
 {
     // Node data
     private int _numNodes;
@@ -384,4 +384,58 @@ public class ReverseArcStaticGraph : IGraphBase
             yield return i + 1; // Return 1-based indices
         }
     }
+
+    #region IMaxFlowGraph Implementation
+
+    public bool HasNegativeReverseArcs => true;
+
+    int IMaxFlowGraph.OppositeArc(int arc) => OppositeArc(arc);
+
+    public IEnumerable<int> OutgoingOrOppositeIncomingArcsStartingFrom(int node, int arc)
+    {
+        if (!_built)
+            throw new InvalidOperationException("Must call Build() first");
+        if (!IsNodeValid(node))
+            throw new ArgumentOutOfRangeException(nameof(node));
+        if (!IsArcValid(arc))
+            throw new ArgumentOutOfRangeException(nameof(arc));
+        
+        bool found = false;
+        
+        // Check outgoing arcs first
+        if (arc > 0)
+        {
+            // Convert to 0-based for internal use
+            int internalArc = arc - 1;
+            
+            // Verify the arc belongs to this node
+            if (_tail![internalArc] == node)
+            {
+                int end = _outStartPos![node + 1];
+                for (int i = internalArc; i < end; i++)
+                {
+                    yield return i + 1; // Return 1-based indices
+                }
+                found = true;
+            }
+        }
+        
+        // Then check opposite incoming arcs
+        foreach (var currentArc in OppositeIncomingArcs(node))
+        {
+            if (!found && currentArc == arc)
+            {
+                found = true;
+            }
+            if (found)
+            {
+                yield return currentArc;
+            }
+        }
+        
+        if (!found)
+            throw new ArgumentException("Arc does not belong to the specified node");
+    }
+
+    #endregion
 }
